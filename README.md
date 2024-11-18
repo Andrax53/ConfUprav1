@@ -10,9 +10,13 @@
 
 ## Структура проекта
 hw2/
+
 ├── assembler.py
+
 ├── interpreter.py
+
 ├── test_program.asm
+
 ├── README.md
 
 
