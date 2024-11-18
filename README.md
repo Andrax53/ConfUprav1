@@ -33,24 +33,24 @@ hw2/
 Ассемблер принимает на вход файл с текстом исходной программы и генерирует бинарный файл.
 
 
-python hw2/assembler.py hw2/test_program.asm hw2/binary_output.bin hw2/log.yaml
+python hw4/assembler.py hw4/test_program.asm hw4/binary_output.bin hw4/log.yaml
 
-hw2/test_program.asm: Входной файл с текстом исходной программы.
+hw4/test_program.asm: Входной файл с текстом исходной программы.
 
-hw2/binary_output.bin: Выходной бинарный файл.
+hw4/binary_output.bin: Выходной бинарный файл.
 
-hw2/log.yaml: Файл-лог в формате YAML.
+hw4/log.yaml: Файл-лог в формате YAML.
 
 ## Интерпретация программы
 
 Интерпретатор принимает на вход бинарный файл, выполняет команды УВМ и сохраняет значения из диапазона памяти УВМ в файл-результат.
 
 
-python hw2/interpreter.py hw2/binary_output.bin hw2/result.yaml 0 4
+python hw4/interpreter.py hw4/binary_output.bin hw4/result.yaml 0 4
 
-hw2/binary_output.bin: Входной бинарный файл.
+hw4/binary_output.bin: Входной бинарный файл.
 
-hw2/result.yaml: Выходной файл-результат в формате YAML.
+hw4/result.yaml: Выходной файл-результат в формате YAML.
 
 0 4: Диапазон памяти для сохранения (от 0 до 4).
 
