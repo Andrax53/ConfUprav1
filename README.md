@@ -24,38 +24,58 @@ hw2/
    python -m venv venv
    source venv/bin/activate  # Для Unix/MacOS
    .\venv\Scripts\activate  # Для Windows
-Использование
+## Использование
 Ассемблирование программы
 Ассемблер принимает на вход файл с текстом исходной программы и генерирует бинарный файл.
 
 
 python hw2/assembler.py hw2/test_program.asm hw2/binary_output.bin hw2/log.yaml
+
 hw2/test_program.asm: Входной файл с текстом исходной программы.
+
 hw2/binary_output.bin: Выходной бинарный файл.
+
 hw2/log.yaml: Файл-лог в формате YAML.
-Интерпретация программы
+
+## Интерпретация программы
+
 Интерпретатор принимает на вход бинарный файл, выполняет команды УВМ и сохраняет значения из диапазона памяти УВМ в файл-результат.
 
 
 python hw2/interpreter.py hw2/binary_output.bin hw2/result.yaml 0 4
+
 hw2/binary_output.bin: Входной бинарный файл.
+
 hw2/result.yaml: Выходной файл-результат в формате YAML.
+
 0 4: Диапазон памяти для сохранения (от 0 до 4).
-Пример тестовой программы
+
+## Пример тестовой программы
+
 Пример тестовой программы, которая выполняет поэлементно операцию bswap() над вектором длины 5 и записывает результат в исходный вектор:
 
 
+
 LOAD_CONST 0 0x12345678
+
 LOAD_CONST 1 0x9ABCDEF0
+
 LOAD_CONST 2 0x12345678
+
 LOAD_CONST 3 0x9ABCDEF0
+
 LOAD_CONST 4 0x12345678
+
 BSWAP 0 0
+
 BSWAP 1 1
+
 BSWAP 2 2
+
 BSWAP 3 3
 BSWAP 4 4
-Пример выходного файла result.yaml
+
+## Пример выходного файла result.yaml
 
 memory:
   0: 78563412
