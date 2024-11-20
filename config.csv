@@ -1,2 +1,0 @@
-username,hostname,vfs_path,startup_script
-user,virtualhost,vfs.zip,/startup.sh
