@@ -10,6 +10,8 @@ def parse_file(file_path):
     current_table = None
     for line in lines:
         line = line.strip()
+        if not line:
+            continue  # Пропускаем пустые строки
         if line.startswith("'"):
             continue  # Пропускаем однострочные комментарии
         elif line.startswith("var "):
