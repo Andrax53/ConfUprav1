@@ -18,12 +18,12 @@ def parse_file(file_path):
             var_match = re.match(r'var (\w+) (.+);', line)
             if var_match:
                 name, value = var_match.groups()
-                data[name] = eval_expression(value)
+                data[name] = eval_expression(value, data)
         elif line.startswith("#("):
             array_match = re.match(r'#\((.+)\)', line)
             if array_match:
                 values = array_match.group(1).split(',')
-                data['array'] = [eval_expression(v.strip()) for v in values]
+                data['array'] = [eval_expression(v.strip(), data) for v in values]
         elif line.startswith("table(["):
             if current_table:
                 data['table'] = current_table
@@ -36,22 +36,24 @@ def parse_file(file_path):
             entry_match = re.match(r'(\w+) = (.+)', line)
             if entry_match:
                 key, value = entry_match.groups()
-                current_table[key.strip()] = eval_expression(value.strip())
+                current_table[key.strip()] = eval_expression(value.strip(), data)
         else:
             print(f"Syntax error: {line}")
 
     return data
 
-def eval_expression(expr):
+def eval_expression(expr, data):
     if expr.isdigit():
         return int(expr)
+    elif expr.startswith('"') and expr.endswith('"'):
+        return expr.strip('"')
     elif expr.startswith("@{"):
-        return eval_constant_expression(expr)
+        return eval_constant_expression(expr, data)
     elif expr.startswith("#("):
         array_match = re.match(r'#\((.+)\)', expr)
         if array_match:
             values = array_match.group(1).split(',')
-            return [eval_expression(v.strip()) for v in values]
+            return [eval_expression(v.strip(), data) for v in values]
     elif expr.startswith("table(["):
         table_match = re.match(r'table\(\[(.+)\]\)', expr, re.DOTALL)
         if table_match:
@@ -59,24 +61,24 @@ def eval_expression(expr):
             table_data = {}
             for entry in entries:
                 key, value = entry.split('=')
-                table_data[key.strip()] = eval_expression(value.strip())
+                table_data[key.strip()] = eval_expression(value.strip(), data)
             return table_data
     else:
-        return expr.strip('"')
+        return data.get(expr, expr)
 
-def eval_constant_expression(expr):
+def eval_constant_expression(expr, data):
     expr = expr[2:-1]  # Удаляем @{ и }
     tokens = expr.split()
     if tokens[0] == '+':
-        return eval_expression(tokens[1]) + eval_expression(tokens[2])
+        return eval_expression(tokens[1], data) + eval_expression(tokens[2], data)
     elif tokens[0] == '-':
-        return eval_expression(tokens[1]) - eval_expression(tokens[2])
+        return eval_expression(tokens[1], data) - eval_expression(tokens[2], data)
     elif tokens[0] == '*':
-        return eval_expression(tokens[1]) * eval_expression(tokens[2])
+        return eval_expression(tokens[1], data) * eval_expression(tokens[2], data)
     elif tokens[0] == 'min':
-        return min(eval_expression(tokens[1]), eval_expression(tokens[2]))
+        return min(eval_expression(tokens[1], data), eval_expression(tokens[2], data))
     elif tokens[0] == 'max':
-        return max(eval_expression(tokens[1]), eval_expression(tokens[2]))
+        return max(eval_expression(tokens[1], data), eval_expression(tokens[2], data))
     else:
         raise ValueError(f"Unknown operation: {tokens[0]}")
 

@@ -4,6 +4,8 @@ var timeout 30;
 var max_connections 100;
 var server_name "example.com";
 
+' Это однострочный комментарий
+
 #( "192.168.1.1", "192.168.1.2", "192.168.1.3" )
 
 table([
@@ -11,3 +13,9 @@ table([
     mask = "255.255.255.0",
     gateway = "192.168.1.254"
 ])
+
+var new_port @{+ port 1};
+var new_timeout @{- timeout 5};
+var new_max_connections @{* max_connections 2};
+var min_value @{min port timeout};
+var max_value @{max port max_connections};
