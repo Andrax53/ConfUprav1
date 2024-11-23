@@ -50,7 +50,6 @@ python3 run_visualizer.py
 python3 test.py /usr/bin/dot Newtonsoft.Json output.mmd 2 https://api.nuget.org/v3-flatcontainer
 ```
 
-```
 ## Тестирование
 Для запуска тестов используйте следующую команду:
 
