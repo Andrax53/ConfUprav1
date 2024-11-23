@@ -1,0 +1,18 @@
+- args:
+  - 352
+  - 346
+  op: move
+- args:
+  - 511
+  - 112
+  - 71
+  op: read
+- args:
+  - 27
+  - 148
+  - 883
+  op: write
+- args:
+  - 810
+  - 188
+  op: bswap
