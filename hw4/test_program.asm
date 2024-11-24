@@ -1,0 +1,13 @@
+; Initialize vector with values
+LOAD 100 0x12
+LOAD 101 0x34
+LOAD 102 0x56
+LOAD 103 0x78
+LOAD 104 0x9A
+
+; Perform bswap on each element
+BSWAP 100 100
+BSWAP 101 101
+BSWAP 102 102
+BSWAP 103 103
+BSWAP 104 104
