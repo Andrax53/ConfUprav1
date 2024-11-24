@@ -1,13 +1,26 @@
-; Initialize vector with values
-LOAD 100 0x12
-LOAD 101 0x34
-LOAD 102 0x56
-LOAD 103 0x78
-LOAD 104 0x9A
+# Test program to perform bswap on a vector of length 5
+# Vector is stored starting at memory address 100
 
-; Perform bswap on each element
-BSWAP 100 100
-BSWAP 101 101
-BSWAP 102 102
-BSWAP 103 103
-BSWAP 104 104
+# Initialize vector length in register 0
+load_const 0, 5
+
+# Initialize counter in register 1
+load_const 1, 0
+
+loop_start:
+    # Read vector element from memory[100 + counter]
+    read_memory 2, 1, 100
+    
+    # Perform bswap on the element
+    bswap 2, 2
+    
+    # Write result back to memory
+    write_memory 1, 0, 2
+    
+    # Increment counter
+    load_const 2, 1
+    add 1, 1, 2
+    
+    # Compare counter with length
+    cmp 1, 0
+    jl loop_start
