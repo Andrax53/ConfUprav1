@@ -2,6 +2,40 @@ import sys
 import re
 import toml
 
+def parse_struct(lines, start_index, data):
+    struct_data = {}
+    i = start_index
+    
+    while i < len(lines):
+        line = lines[i].strip()
+        if line.startswith('}'):
+            return struct_data, i
+        
+        if line:
+            # Handle nested struct
+            if 'struct {' in line:
+                if not line.endswith('{'):
+                    raise SyntaxError(f"Invalid struct declaration: {line}")
+                key = line[:line.index('=')].strip()
+                if not re.match(r'^[a-z][a-z0-9_]*$', key):
+                    raise SyntaxError(f"Invalid struct key: {key}")
+                i += 1
+                nested_struct, new_i = parse_struct(lines, i, data)
+                struct_data[key] = nested_struct
+                i = new_i
+            else:
+                if not line.endswith(','):
+                    raise SyntaxError(f"Missing comma in struct entry: {line}")
+                entry_match = re.match(r'([a-z][a-z0-9_]*)\s*=\s*(.+),', line)
+                if entry_match:
+                    key, value = entry_match.groups()
+                    struct_data[key] = eval_expression(value.strip(), data)
+                else:
+                    raise SyntaxError(f"Invalid struct entry: {line}")
+        i += 1
+    
+    raise SyntaxError("Unclosed struct definition")
+
 def parse_file(file_path):
     with open(file_path, 'r') as file:
         content = file.read()
@@ -10,7 +44,6 @@ def parse_file(file_path):
     content = re.sub(r'\(comment.*?\)', '', content, flags=re.DOTALL)
     
     data = {}
-    current_struct = None
     struct_count = 0
     
     # Split into lines and clean
@@ -27,7 +60,6 @@ def parse_file(file_path):
                 if not line.endswith(';'):
                     raise SyntaxError("Missing semicolon at end of constant declaration")
                 
-                # Split into name and value parts
                 parts = line.split('<-', 1)
                 if len(parts) != 2:
                     raise SyntaxError("Invalid constant declaration format")
@@ -38,7 +70,6 @@ def parse_file(file_path):
                 if not re.match(r'^[a-z][a-z0-9_]*$', name):
                     raise SyntaxError(f"Invalid constant name: {name}")
                 
-                # Handle constant evaluation
                 if value.startswith('|') and value.endswith('|'):
                     const_name = value[1:-1].strip()
                     if const_name not in data:
@@ -49,28 +80,12 @@ def parse_file(file_path):
                 
             # Parse struct
             elif line.startswith('struct {'):
-                current_struct = {}
                 i += 1
-                while i < len(lines) and not lines[i].strip().startswith('}'):
-                    struct_line = lines[i].strip()
-                    if struct_line:
-                        if not struct_line.endswith(','):
-                            raise SyntaxError(f"Missing comma in struct entry: {struct_line}")
-                        entry_match = re.match(r'([a-z][a-z0-9_]*)\s*=\s*(.+),', struct_line)
-                        if entry_match:
-                            key, value = entry_match.groups()
-                            current_struct[key] = eval_expression(value.strip(), data)
-                        else:
-                            raise SyntaxError(f"Invalid struct entry: {struct_line}")
-                    i += 1
-                if i >= len(lines) or not lines[i].strip().startswith('}'):
-                    raise SyntaxError("Unclosed struct definition")
-                
-                # Store struct with unique name if there are multiple
+                struct_data, new_i = parse_struct(lines, i, data)
                 struct_name = f"struct{struct_count}" if struct_count > 0 else "struct"
-                data[struct_name] = current_struct
+                data[struct_name] = struct_data
                 struct_count += 1
-                current_struct = None
+                i = new_i
             
         except Exception as e:
             raise type(e)(f"Error on line {i + 1}: {str(e)}\nLine content: {line}")
@@ -99,21 +114,29 @@ def eval_expression(expr, data):
             struct_content = expr[7:-1].strip()
             struct_data = {}
             if struct_content:
-                entries = [e.strip() for e in struct_content.split(',') if e.strip()]
+                entries = struct_content.split(',')
                 for entry in entries:
-                    key, value = entry.split('=')
-                    struct_data[key.strip()] = eval_expression(value.strip(), data)
+                    entry = entry.strip()
+                    if entry:
+                        key_value = entry.split('=')
+                        if len(key_value) != 2:
+                            raise SyntaxError(f"Invalid struct entry: {entry}")
+                        key, value = key_value
+                        key = key.strip()
+                        value = value.strip()
+                        if not re.match(r'^[a-z][a-z0-9_]*$', key):
+                            raise SyntaxError(f"Invalid struct key: {key}")
+                        struct_data[key] = eval_expression(value, data)
             return struct_data
             
-        # Handle constant references
-        if expr in data:
-            return data[expr]
+        # Handle strings (no quotes)
+        if not any(c in expr for c in '[]{}()<-=,'):
+            return expr
             
-        # Handle strings (anything else)
-        return expr
-            
+        raise ValueError(f"Invalid expression: {expr}")
+        
     except Exception as e:
-        raise ValueError(f"Error evaluating expression '{expr}': {str(e)}")
+        raise type(e)(f"Error evaluating expression: {expr}\n{str(e)}")
 
 def write_toml(data, output_path):
     with open(output_path, 'w') as file:

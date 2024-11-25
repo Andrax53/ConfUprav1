@@ -1,0 +1,26 @@
+port <- 8080;
+timeout <- 30;
+
+struct {
+    server = struct {
+        host = localhost,
+        port = 8080,
+        ssl = struct {
+            enabled = true,
+            cert_path = /etc/ssl/cert.pem,
+            key_path = /etc/ssl/key.pem,
+        },
+    },
+    database = struct {
+        host = localhost,
+        port = 5432,
+        credentials = struct {
+            username = admin,
+            password = secure123,
+        },
+    },
+    logging = struct {
+        level = debug,
+        file = app.log,
+    },
+}

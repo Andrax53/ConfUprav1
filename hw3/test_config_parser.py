@@ -66,6 +66,46 @@ class TestConfigParser(unittest.TestCase):
         self.assertEqual(toml_data['struct1']['shadows'], 'high')
         self.assertEqual(toml_data['struct1']['textures'], 'ultra')
 
+    def test_nested_config(self):
+        # Test input-output conversion for nested configuration
+        config_path = os.path.join(self.test_dir, 'examples', 'nested_config.txt')
+        data = parse_file(config_path)
+        write_toml(data, self.test_output)
+        
+        # Read generated TOML and verify contents
+        with open(self.test_output, 'r') as f:
+            toml_data = toml.load(f)
+        
+        # Verify basic values
+        self.assertEqual(toml_data['port'], 8080)
+        self.assertEqual(toml_data['timeout'], 30)
+        
+        # Verify nested structs
+        server = toml_data['struct']['server']
+        self.assertEqual(server['host'], 'localhost')
+        self.assertEqual(server['port'], 8080)
+        
+        # Verify deeply nested SSL config
+        ssl = server['ssl']
+        self.assertEqual(ssl['enabled'], 'true')
+        self.assertEqual(ssl['cert_path'], '/etc/ssl/cert.pem')
+        self.assertEqual(ssl['key_path'], '/etc/ssl/key.pem')
+        
+        # Verify database config
+        db = toml_data['struct']['database']
+        self.assertEqual(db['host'], 'localhost')
+        self.assertEqual(db['port'], 5432)
+        
+        # Verify database credentials
+        creds = db['credentials']
+        self.assertEqual(creds['username'], 'admin')
+        self.assertEqual(creds['password'], 'secure123')
+        
+        # Verify logging config
+        logging = toml_data['struct']['logging']
+        self.assertEqual(logging['level'], 'debug')
+        self.assertEqual(logging['file'], 'app.log')
+
     def test_syntax_errors(self):
         # Create a temporary file for testing syntax errors
         test_file = os.path.join(self.test_dir, 'test_syntax.txt')
