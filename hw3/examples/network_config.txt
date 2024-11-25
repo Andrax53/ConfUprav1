@@ -1,0 +1,19 @@
+(comment
+Network configuration example
+Shows basic network settings for a server
+)
+
+port <- 8080;
+timeout <- 30;
+max_connections <- 100;
+
+struct {
+    ip = 192.168.1.1,
+    mask = 255.255.255.0,
+    gateway = 192.168.1.254,
+}
+
+allowed_ips <- [ 192.168.1.2 192.168.1.3 192.168.1.4 ];
+
+(comment Calculate derived values)
+backup_port <- |port|;

@@ -1,0 +1,23 @@
+(comment
+Game configuration example
+Contains settings for a video game
+)
+
+screen_width <- 1920;
+screen_height <- 1080;
+
+struct {
+    sound_volume = 80,
+    music_volume = 60,
+    effects_volume = 100,
+}
+
+key_bindings <- [ w a s d space shift ];
+
+(comment Graphics settings)
+struct {
+    vsync = 1,
+    antialiasing = 4,
+    shadows = high,
+    textures = ultra,
+}
