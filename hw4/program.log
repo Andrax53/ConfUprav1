@@ -1,89 +1,111 @@
 instructions:
-- instruction: load_const
-  args:
-  - 0
-  - 5
-  binary:
-  - 82
-  - 0
-  - 40
-  - 0
-- instruction: load_const
-  args:
-  - 1
-  - 0
-  binary:
-  - 210
-  - 0
-  - 0
-  - 0
-- instruction: l
-  args:
-  - o
-  - o
-  - p
-  - _
-  - s
-  - t
-  - a
-  - r
-  - t
-  - ':'
-  binary:
-  - 19
-  - 1
-  - 8
-  - 0
-- instruction: read_memory
-  args:
-  - 2
-  - 1
-  - 100
-  binary:
-  - 50
-  - 0
-  - 22
-  - 1
-  - 16
-  - 0
-- instruction: bswap
-  args:
-  - 2
-  - 2
-  binary:
-  - 159
-  - 0
-  - 0
-  - 64
-- instruction: write_memory
-  args:
-  - 1
-  - 0
-  - 2
-  binary:
-  - 0
-  - 0
-  - 82
-  - 1
-  - 8
-  - 0
-- instruction: load_const
-  args:
-  - 2
-  - 1
-  binary: []
-- instruction: add
-  args:
-  - 1
-  - 1
-  - 2
-  binary: []
-- instruction: cmp
-  args:
-  - 1
-  - 0
-  binary: []
-- instruction: jl
-  args:
-  - loop_start
-  binary: []
+- command: read_memory
+  bytes:
+  - '0x13'
+  - '0x01'
+  - '0x00'
+  - '0x00'
+  - '0x32'
+  - '0x00'
+- command: bswap
+  bytes:
+  - '0x16'
+  - '0x01'
+  - '0x10'
+  - '0x00'
+- command: write_memory
+  bytes:
+  - '0x1F'
+  - '0x00'
+  - '0x20'
+  - '0x43'
+  - '0x00'
+  - '0x00'
+- command: read_memory
+  bytes:
+  - '0x13'
+  - '0x01'
+  - '0x00'
+  - '0x80'
+  - '0x32'
+  - '0x00'
+- command: bswap
+  bytes:
+  - '0x16'
+  - '0x01'
+  - '0x10'
+  - '0x00'
+- command: write_memory
+  bytes:
+  - '0x1F'
+  - '0x00'
+  - '0x28'
+  - '0x43'
+  - '0x00'
+  - '0x00'
+- command: read_memory
+  bytes:
+  - '0x13'
+  - '0x01'
+  - '0x00'
+  - '0x00'
+  - '0x33'
+  - '0x00'
+- command: bswap
+  bytes:
+  - '0x16'
+  - '0x01'
+  - '0x10'
+  - '0x00'
+- command: write_memory
+  bytes:
+  - '0x1F'
+  - '0x00'
+  - '0x30'
+  - '0x43'
+  - '0x00'
+  - '0x00'
+- command: read_memory
+  bytes:
+  - '0x13'
+  - '0x01'
+  - '0x00'
+  - '0x80'
+  - '0x33'
+  - '0x00'
+- command: bswap
+  bytes:
+  - '0x16'
+  - '0x01'
+  - '0x10'
+  - '0x00'
+- command: write_memory
+  bytes:
+  - '0x1F'
+  - '0x00'
+  - '0x38'
+  - '0x43'
+  - '0x00'
+  - '0x00'
+- command: read_memory
+  bytes:
+  - '0x13'
+  - '0x01'
+  - '0x00'
+  - '0x00'
+  - '0x34'
+  - '0x00'
+- command: bswap
+  bytes:
+  - '0x16'
+  - '0x01'
+  - '0x10'
+  - '0x00'
+- command: write_memory
+  bytes:
+  - '0x1F'
+  - '0x00'
+  - '0x40'
+  - '0x43'
+  - '0x00'
+  - '0x00'

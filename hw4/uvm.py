@@ -45,9 +45,13 @@ def serializer(cmd, fields, size):
         bits |= (value << offset)
     return bits.to_bytes(size, 'little')
 
-def interpreter(memory, program):
+def interpreter(memory, program, start_addr=100, length=5):
     regs = [0] * 16  # General purpose registers
     pc = 0  # Program counter
+    
+    # Initialize test values in memory
+    for i in range(length):
+        memory[start_addr + i] = 0x12345678  # Example initial value
     
     while pc < len(program):
         cmd = program[pc]
@@ -60,13 +64,15 @@ def interpreter(memory, program):
             target = (program[pc+1] >> 7) & 0x7FF
             addr = (program[pc+2] >> 3) & 0x7FF
             offset = (program[pc+4] >> 7) & 0x3FF
-            regs[target] = memory[regs[addr] + offset]
+            if regs[addr] + offset < len(memory):
+                regs[target] = memory[regs[addr] + offset]
             pc += 6
         elif cmd == 31:  # write_memory
             addr = (program[pc+1] >> 7) & 0x7FF
             offset = (program[pc+2] >> 3) & 0x3FF
             source = (program[pc+4] >> 5) & 0x7FF
-            memory[regs[addr] + offset] = regs[source]
+            if regs[addr] + offset < len(memory):
+                memory[regs[addr] + offset] = regs[source]
             pc += 6
         elif cmd == 22:  # bswap
             source = (program[pc+1] >> 7) & 0x7FF
@@ -75,20 +81,30 @@ def interpreter(memory, program):
             regs[target] = ((value & 0xFF) << 24) | ((value & 0xFF00) << 8) | \
                           ((value & 0xFF0000) >> 8) | ((value & 0xFF000000) >> 24)
             pc += 4
+        else:
+            pc += 1  # Skip unknown commands
     
-    return memory
+    # Generate result dictionary
+    result = {"memory_values": {}}
+    for i in range(length):
+        addr = start_addr + i
+        result["memory_values"][addr] = f"0x{memory[addr]:08X}"
+    
+    return result
 
 if __name__ == "__main__":
     import sys
     import yaml
     
-    if len(sys.argv) != 4:
-        print("Usage: python uvm.py <input_asm> <output_bin> <log_file>")
+    if len(sys.argv) != 6:
+        print("Usage: python uvm.py <input_asm> <output_bin> <log_file> <result_file> <memory_range>")
         sys.exit(1)
         
     input_file = sys.argv[1]
     output_file = sys.argv[2]
     log_file = sys.argv[3]
+    result_file = sys.argv[4]
+    memory_range = [int(x) for x in sys.argv[5].split(',')]
     
     # Read assembly code
     with open(input_file, 'r') as f:
@@ -97,41 +113,58 @@ if __name__ == "__main__":
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
+            tokens = line.split()
             if line.endswith(':'):  # Label
-                code.append(line)
-                continue
-            parts = line.replace(',', '').split()
-            if len(parts) > 1:  # Instruction with arguments
+                code.append((line,))
+            else:
                 try:
-                    args = [int(arg) for arg in parts[1:]]
-                    code.append((parts[0], *args))
+                    # Try to convert arguments to integers, skip if not possible (e.g., labels)
+                    args = [int(x.strip(',')) for x in tokens[1:]]
+                    code.append((tokens[0], *args))
                 except ValueError:
-                    code.append((parts[0], *parts[1:]))  # Handle non-numeric arguments (like labels)
-            else:  # Instruction without arguments
-                code.append((parts[0],))
+                    # Skip lines that can't be converted to integers (like labels)
+                    continue
     
-    # Assemble the code
+    # Generate binary code
     binary = assembler(code)
     
-    # Write binary output
+    # Save binary output
     with open(output_file, 'wb') as f:
         f.write(binary)
     
-    # Write log file
-    log = {'instructions': []}
-    pos = 0
-    for op, *args in code:
-        if isinstance(op, str) and op.endswith(':'):
-            continue
-        instr_size = 4  # Default size
-        if op in ['read_memory', 'write_memory']:
-            instr_size = 6
-        log['instructions'].append({
-            'instruction': op,
-            'args': args,
-            'binary': list(binary[pos:pos+instr_size])
-        })
-        pos += instr_size
+    # Initialize memory and run interpreter
+    memory = [0] * 1024  # 1024 memory locations
+    start_addr, length = memory_range
+    result = interpreter(memory, binary, start_addr, length)
+    
+    # Save log file
+    log_data = {"instructions": []}
+    pc = 0
+    while pc < len(binary):
+        cmd = binary[pc]
+        if cmd == 82:  # load_const
+            size = 4
+            log_data["instructions"].append({
+                "command": "load_const",
+                "bytes": [f"0x{b:02X}" for b in binary[pc:pc+size]]
+            })
+        elif cmd in (19, 31):  # read_memory, write_memory
+            size = 6
+            log_data["instructions"].append({
+                "command": "read_memory" if cmd == 19 else "write_memory",
+                "bytes": [f"0x{b:02X}" for b in binary[pc:pc+size]]
+            })
+        elif cmd == 22:  # bswap
+            size = 4
+            log_data["instructions"].append({
+                "command": "bswap",
+                "bytes": [f"0x{b:02X}" for b in binary[pc:pc+size]]
+            })
+        pc += size
     
     with open(log_file, 'w') as f:
-        yaml.dump(log, f, sort_keys=False)
+        yaml.dump(log_data, f, sort_keys=False)
+    
+    # Save result file
+    with open(result_file, 'w') as f:
+        yaml.dump(result, f, sort_keys=False)

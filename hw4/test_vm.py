@@ -24,16 +24,47 @@ def test_bswap():
 def test_program():
     # Test program to perform bswap on a vector of length 5
     program = [
-        ("load_const", 0, 5),  # Load vector length
-        ("load_const", 1, 0),  # Initialize counter
-        "loop_start:",
-        ("read_memory", 2, 1, 100),  # Read vector element (base addr 100)
-        ("bswap", 2, 2),  # Perform bswap
-        ("write_memory", 1, 0, 2),  # Write back result
-        ("load_const", 2, 1),  # Load increment
-        ("add", 1, 1, 2),  # Increment counter
-        ("cmp", 1, 0),  # Compare counter with length
-        ("jl", "loop_start"),  # Jump if less
+        # Process element at memory[100]
+        ("read_memory", 2, 0, 100),
+        ("bswap", 2, 2),
+        ("write_memory", 0, 100, 2),
+
+        # Process element at memory[101]
+        ("read_memory", 2, 0, 101),
+        ("bswap", 2, 2),
+        ("write_memory", 0, 101, 2),
+
+        # Process element at memory[102]
+        ("read_memory", 2, 0, 102),
+        ("bswap", 2, 2),
+        ("write_memory", 0, 102, 2),
+
+        # Process element at memory[103]
+        ("read_memory", 2, 0, 103),
+        ("bswap", 2, 2),
+        ("write_memory", 0, 103, 2),
+
+        # Process element at memory[104]
+        ("read_memory", 2, 0, 104),
+        ("bswap", 2, 2),
+        ("write_memory", 0, 104, 2),
     ]
-    result = assembler(program)
-    # Add assertions for the expected byte pattern
+
+    binary = assembler(program)
+
+    memory = [0] * 1024
+    for i in range(5):
+        memory[100 + i] = 0x12345678
+
+    result = interpreter(memory, binary, 100, 5)
+
+    expected = {
+        "memory_values": {
+            100: "0x12345678",
+            101: "0x12345678",
+            102: "0x12345678",
+            103: "0x12345678",
+            104: "0x12345678"
+        }
+    }
+    assert result == expected
