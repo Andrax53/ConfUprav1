@@ -25,25 +25,46 @@ def assembler(code):
             
         if op == 'load_const':
             addr, const = args
-            bc.extend(serializer(82, ((addr, 7), (const, 19)), 4))
+            bc.append(82)  # opcode
+            bc.append(addr & 0xF)  # register
+            bc.append(const & 0xFF)  # low byte
+            bc.append((const >> 8) & 0xFF)  # high byte
         elif op == 'read_memory':
             target, addr, offset = args
-            bc.extend(serializer(19, ((target, 7), (addr, 19), (offset, 31)), 6))
+            bc.append(19)  # opcode
+            bc.append(target & 0xF)  # target register
+            bc.append(addr & 0xF)  # address register
+            bc.append(offset & 0xFF)  # offset
+            bc.append(0)  # padding
+            bc.append(0)  # padding
         elif op == 'write_memory':
             addr, offset, source = args
-            bc.extend(serializer(31, ((addr, 7), (offset, 19), (source, 29)), 6))
+            bc.append(31)  # opcode
+            bc.append(addr & 0xF)  # address register
+            bc.append(offset & 0xFF)  # offset
+            bc.append(source & 0xF)  # source register
+            bc.append(0)  # padding
+            bc.append(0)  # padding
         elif op == 'bswap':
             source, target = args
-            bc.extend(serializer(22, ((source, 7), (target, 19)), 4))
+            bc.append(22)  # opcode
+            bc.append(source & 0xF)  # source register
+            bc.append(target & 0xF)  # target register
+            bc.append(0)  # padding
             
     return bc
 
 def serializer(cmd, fields, size):
-    bits = 0
-    bits |= cmd
-    for value, offset in fields:
-        bits |= (value << offset)
-    return bits.to_bytes(size, 'little')
+    result = bytearray(size)
+    result[0] = cmd
+    
+    for value, shift in fields:
+        byte_index = 1 + (shift // 8)
+        bit_shift = shift % 8
+        if byte_index < size:
+            result[byte_index] |= (value & 0xFF) << bit_shift
+    
+    return result
 
 def interpreter(memory, program, start_addr=100, length=5):
     regs = [0] * 16  # General purpose registers
@@ -56,30 +77,41 @@ def interpreter(memory, program, start_addr=100, length=5):
     while pc < len(program):
         cmd = program[pc]
         if cmd == 82:  # load_const
-            addr = (program[pc+1] >> 7) & 0x7FF
-            const = (program[pc+2] >> 3) & 0x3FF
+            addr = program[pc+1] & 0xF
+            const = (program[pc+2] | (program[pc+3] << 8))  # Get 16-bit constant
             regs[addr] = const
+            print(f"Loading constant {const} into register {addr}")
             pc += 4
         elif cmd == 19:  # read_memory
-            target = (program[pc+1] >> 7) & 0x7FF
-            addr = (program[pc+2] >> 3) & 0x7FF
-            offset = (program[pc+4] >> 7) & 0x3FF
-            if regs[addr] + offset < len(memory):
-                regs[target] = memory[regs[addr] + offset]
+            target = program[pc+1] & 0xF
+            addr = program[pc+2] & 0xF
+            offset = program[pc+3]
+            addr_val = regs[addr] + offset
+            if addr_val < len(memory):
+                regs[target] = memory[addr_val]
+                print(f"Reading from memory[{addr_val}]: 0x{regs[target]:08X}")
             pc += 6
         elif cmd == 31:  # write_memory
-            addr = (program[pc+1] >> 7) & 0x7FF
-            offset = (program[pc+2] >> 3) & 0x3FF
-            source = (program[pc+4] >> 5) & 0x7FF
-            if regs[addr] + offset < len(memory):
-                memory[regs[addr] + offset] = regs[source]
+            addr = program[pc+1] & 0xF
+            offset = program[pc+2]
+            source = program[pc+3] & 0xF
+            addr_val = regs[addr] + offset
+            if addr_val < len(memory):
+                memory[addr_val] = regs[source]
+                print(f"Writing to memory[{addr_val}]: 0x{regs[source]:08X}")
             pc += 6
         elif cmd == 22:  # bswap
-            source = (program[pc+1] >> 7) & 0x7FF
-            target = (program[pc+2] >> 3) & 0x7FF
+            source = program[pc+1] & 0xF
+            target = program[pc+2] & 0xF
             value = regs[source]
-            regs[target] = ((value & 0xFF) << 24) | ((value & 0xFF00) << 8) | \
-                          ((value & 0xFF0000) >> 8) | ((value & 0xFF000000) >> 24)
+            print(f"BSWAP: value before = 0x{value:08X}")
+            # Swap bytes
+            b0 = (value >> 24) & 0xFF
+            b1 = (value >> 16) & 0xFF
+            b2 = (value >> 8) & 0xFF
+            b3 = value & 0xFF
+            regs[target] = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0
+            print(f"BSWAP: value after = 0x{regs[target]:08X}")
             pc += 4
         else:
             pc += 1  # Skip unknown commands
