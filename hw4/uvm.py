@@ -10,7 +10,7 @@ def assembler(code):
             continue
             
         if op == 'load_const':
-            current_pos += 4
+            current_pos += 6
         elif op == 'read_memory':
             current_pos += 6
         elif op == 'write_memory':
@@ -27,8 +27,10 @@ def assembler(code):
             addr, const = args
             bc.append(82)  # opcode
             bc.append(addr & 0xF)  # register
-            bc.append(const & 0xFF)  # low byte
-            bc.append((const >> 8) & 0xFF)  # high byte
+            bc.append(const & 0xFF)  # lowest byte
+            bc.append((const >> 8) & 0xFF)  # second byte
+            bc.append((const >> 16) & 0xFF)  # third byte
+            bc.append((const >> 24) & 0xFF)  # highest byte
         elif op == 'read_memory':
             target, addr, offset = args
             bc.append(19)  # opcode
@@ -70,27 +72,14 @@ def interpreter(memory, program, start_addr=100, length=5, input_file='test_prog
     regs = [0] * 16  # General purpose registers
     pc = 0  # Program counter
     
-    # Initialize test values in memory from input file
-    initial_values = []
-    with open(input_file, 'r') as f:
-        for line in f:
-            if line.strip().startswith('load_const'):
-                # Extract the hexadecimal value after the comma
-                value = int(line.split(',')[1].split('#')[0].strip(), 16)
-                initial_values.append(value)
-    
-    # Use only the first 'length' values
-    for i in range(length):
-        memory[start_addr + i] = initial_values[i]
-    
     while pc < len(program):
         cmd = program[pc]
         if cmd == 82:  # load_const
             addr = program[pc+1] & 0xF
-            const = (program[pc+2] | (program[pc+3] << 8))  # Get 16-bit constant
+            const = (program[pc+2] | (program[pc+3] << 8) | (program[pc+4] << 16) | (program[pc+5] << 24))  # Get 32-bit constant
             regs[addr] = const
             print(f"Loading constant {const} into register {addr}")
-            pc += 4
+            pc += 6
         elif cmd == 19:  # read_memory
             target = program[pc+1] & 0xF
             addr = program[pc+2] & 0xF
@@ -146,6 +135,10 @@ if __name__ == "__main__":
     log_file = sys.argv[3]
     result_file = sys.argv[4]
     memory_range = [int(x) for x in sys.argv[5].split(',')]
+    start_addr, length = memory_range
+    
+    # Initialize memory
+    memory = [0] * 1024  # 1024 memory locations
     
     # Read assembly code
     with open(input_file, 'r') as f:
@@ -159,8 +152,14 @@ if __name__ == "__main__":
                 code.append((line,))
             else:
                 try:
-                    # Try to convert arguments to integers, skip if not possible (e.g., labels)
-                    args = [int(x.strip(',')) for x in tokens[1:]]
+                    # Handle hexadecimal values
+                    args = []
+                    for arg in tokens[1:]:
+                        arg = arg.strip(',')
+                        if arg.startswith('0x'):
+                            args.append(int(arg, 16))
+                        else:
+                            args.append(int(arg))
                     code.append((tokens[0], *args))
                 except ValueError:
                     # Skip lines that can't be converted to integers (like labels)
@@ -173,9 +172,7 @@ if __name__ == "__main__":
     with open(output_file, 'wb') as f:
         f.write(binary)
     
-    # Initialize memory and run interpreter
-    memory = [0] * 1024  # 1024 memory locations
-    start_addr, length = memory_range
+    # Run interpreter
     result = interpreter(memory, binary, start_addr, length, input_file)
     
     # Save log file
@@ -184,7 +181,7 @@ if __name__ == "__main__":
     while pc < len(binary):
         cmd = binary[pc]
         if cmd == 82:  # load_const
-            size = 4
+            size = 6
             log_data["instructions"].append({
                 "command": "load_const",
                 "bytes": [f"0x{b:02X}" for b in binary[pc:pc+size]]

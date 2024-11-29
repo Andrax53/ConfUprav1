@@ -4,7 +4,7 @@ from uvm import assembler, interpreter
 def test_load_const():
     # Test loading constant 100 into register 0
     result = assembler([("load_const", 0, 100)])
-    assert result == bytearray([0x52, 0x00, 0x64, 0x00])
+    assert result == bytearray([0x52, 0x00, 0x64, 0x00, 0x00, 0x00])  # 32-bit format: opcode, reg, 4 bytes for value
 
 def test_read_memory():
     # Test reading from memory using register 2 as target, register 0 as base, offset 0
@@ -25,11 +25,25 @@ def test_program():
     # Test program to perform bswap on a vector of length 5
     program = [
         # Initialize vector with test values
-        ("load_const", 100, 0x12345678),  # First element
-        ("load_const", 101, 0xAABBCCDD),  # Second element
-        ("load_const", 102, 0x87654321),  # Third element
-        ("load_const", 103, 0xFEDCBA98),  # Fourth element
-        ("load_const", 104, 0x11223344),  # Fifth element
+        # First element
+        ("load_const", 1, 0x12345678),
+        ("write_memory", 0, 100, 1),
+        
+        # Second element
+        ("load_const", 1, 0xAABBCCDD),
+        ("write_memory", 0, 101, 1),
+        
+        # Third element
+        ("load_const", 1, 0x87654321),
+        ("write_memory", 0, 102, 1),
+        
+        # Fourth element
+        ("load_const", 1, 0xFEDCBA98),
+        ("write_memory", 0, 103, 1),
+        
+        # Fifth element
+        ("load_const", 1, 0x11223344),
+        ("write_memory", 0, 104, 1),
         
         # Set up base address in register 0
         ("load_const", 0, 100),
@@ -80,7 +94,8 @@ def test_single_bswap():
     # Test a single bswap operation
     program = [
         # Initialize first element
-        ("load_const", 100, 0x12345678),
+        ("load_const", 1, 0x12345678),
+        ("write_memory", 0, 100, 1),
         
         # Set up base address
         ("load_const", 0, 100),
