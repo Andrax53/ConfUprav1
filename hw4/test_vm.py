@@ -54,22 +54,19 @@ def test_program():
     ]
 
     binary = assembler(program)
-
-    # Initialize memory with test values
     memory = [0] * 1024
-    for i in range(5):
-        memory[100 + i] = 0x12345678
-
-    result = interpreter(memory, binary, 100, 5)
+    
+    # Use interpreter with test_program.asm as input file
+    result = interpreter(memory, binary, 100, 5, 'test_program.asm')
 
     # After bswap, each value should be byte-swapped
     expected = {
         "memory_values": {
-            100: "0x78563412",
-            101: "0x78563412",
-            102: "0x78563412",
-            103: "0x78563412",
-            104: "0x78563412"
+            100: "0x78563412",  # bswap(0x12345678)
+            101: "0xDDCCBBAA",  # bswap(0xAABBCCDD)
+            102: "0x21436587",  # bswap(0x87654321)
+            103: "0x98BADCFE",  # bswap(0xFEDCBA98)
+            104: "0x44332211"   # bswap(0x11223344)
         }
     }
     assert result == expected
@@ -85,12 +82,13 @@ def test_single_bswap():
 
     binary = assembler(program)
     memory = [0] * 1024
-    memory[100] = 0x12345678
-
-    result = interpreter(memory, binary, 100, 1)
+    
+    # Use interpreter with test_program.asm as input file
+    result = interpreter(memory, binary, 100, 1, 'test_program.asm')
+    
     expected = {
         "memory_values": {
-            100: "0x78563412"
+            100: "0x78563412"  # bswap(0x12345678)
         }
     }
     assert result == expected

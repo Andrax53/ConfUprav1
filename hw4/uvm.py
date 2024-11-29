@@ -66,13 +66,22 @@ def serializer(cmd, fields, size):
     
     return result
 
-def interpreter(memory, program, start_addr=100, length=5):
+def interpreter(memory, program, start_addr=100, length=5, input_file='test_program.asm'):
     regs = [0] * 16  # General purpose registers
     pc = 0  # Program counter
     
-    # Initialize test values in memory
+    # Initialize test values in memory from input file
+    initial_values = []
+    with open(input_file, 'r') as f:
+        for line in f:
+            if line.strip().startswith('load_const'):
+                # Extract the hexadecimal value after the comma
+                value = int(line.split(',')[1].split('#')[0].strip(), 16)
+                initial_values.append(value)
+    
+    # Use only the first 'length' values
     for i in range(length):
-        memory[start_addr + i] = 0x12345678  # Example initial value
+        memory[start_addr + i] = initial_values[i]
     
     while pc < len(program):
         cmd = program[pc]
@@ -167,7 +176,7 @@ if __name__ == "__main__":
     # Initialize memory and run interpreter
     memory = [0] * 1024  # 1024 memory locations
     start_addr, length = memory_range
-    result = interpreter(memory, binary, start_addr, length)
+    result = interpreter(memory, binary, start_addr, length, input_file)
     
     # Save log file
     log_data = {"instructions": []}
