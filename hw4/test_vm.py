@@ -24,7 +24,14 @@ def test_bswap():
 def test_program():
     # Test program to perform bswap on a vector of length 5
     program = [
-        # Set up base address
+        # Initialize vector with test values
+        ("load_const", 100, 0x12345678),  # First element
+        ("load_const", 101, 0xAABBCCDD),  # Second element
+        ("load_const", 102, 0x87654321),  # Third element
+        ("load_const", 103, 0xFEDCBA98),  # Fourth element
+        ("load_const", 104, 0x11223344),  # Fifth element
+        
+        # Set up base address in register 0
         ("load_const", 0, 100),
         
         # Process element at memory[100]
@@ -55,9 +62,7 @@ def test_program():
 
     binary = assembler(program)
     memory = [0] * 1024
-    
-    # Use interpreter with test_program.asm as input file
-    result = interpreter(memory, binary, 100, 5, 'test_program.asm')
+    result = interpreter(memory, binary, 100, 5)
 
     # After bswap, each value should be byte-swapped
     expected = {
@@ -74,7 +79,13 @@ def test_program():
 def test_single_bswap():
     # Test a single bswap operation
     program = [
+        # Initialize first element
+        ("load_const", 100, 0x12345678),
+        
+        # Set up base address
         ("load_const", 0, 100),
+        
+        # Perform bswap
         ("read_memory", 2, 0, 0),
         ("bswap", 2, 2),
         ("write_memory", 0, 0, 2),
@@ -82,9 +93,7 @@ def test_single_bswap():
 
     binary = assembler(program)
     memory = [0] * 1024
-    
-    # Use interpreter with test_program.asm as input file
-    result = interpreter(memory, binary, 100, 1, 'test_program.asm')
+    result = interpreter(memory, binary, 100, 1)
     
     expected = {
         "memory_values": {
